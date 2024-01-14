@@ -6,7 +6,7 @@ class user:
     def __init__(self,name) -> None:
         self.name=name
         self.userSoc=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        self.userSoc.connect((socket.gethostbyname(socket.gethostname()),8888))
+        self.userSoc.connect(("192.168.1.3",8888))
         
     def listen(self):
         while True:
@@ -29,7 +29,6 @@ class user:
                 print("Error occured")
                 self.userSoc.close()
 
-    
     def start(self):
         listenThread=threading.Thread(target=self.listen)
         listenThread.start()

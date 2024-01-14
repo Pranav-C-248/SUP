@@ -18,3 +18,4 @@ except (SystemExit, MemoryError, KeyboardInterrupt):
 except Exception as e:
     # Print other exceptions for troubleshooting
     print(f"Error: {e}")
+
