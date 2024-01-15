@@ -3,12 +3,10 @@ import threading
 import mysql.connector
 import time
 
-ip = "192.168.1.3"
+ip = "127.0.0.1"
 port = 8888
 names=[]
 users=[]
-loginStatus=False
-registerStatus=False
 dbFree=True
 
 serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -77,21 +75,19 @@ def execdb(query):
         
         
 def loginUser(userSocket,username,password):
-    global loginStatus
     query = f"SELECT * FROM users WHERE username ={username} AND password = {password}"
     status=execdb(query)
     if status:
         userSocket.send("success".encode())
-        loginStatus=True
+        return True
     else:
         userSocket.send("fail".encode())
-        loginStatus=False
+        return False
 def registerUser(userSocket,username,password):
-    global registerStatus
-    query = f"INSERT INTO users (username, password) VALUES ({username}, {password})"
+    query = f"INSERT INTO sup.users (username, password) VALUES ({username}, {password})"
     status=execdb(query)
     userSocket.send("success".encode())
-    registerStatus=True
+    return True
         
         
 def accepter():
@@ -100,19 +96,19 @@ def accepter():
             user,add=serverSock.accept()
             action,username,password=user.recv(1024).decode().split(",")
             if action=="login":
-                loginUser(user,username,password)
+                status = loginUser(user,username,password)
             elif action=="register":
-                registerUser(user,username,password)
+                status = registerUser(user,username,password)
+            if status:
+                thread=threading.Thread(target=messaging,args=(user,))
+                thread.start()
+            else:
+                break
             users.append(user)
             # user.send("NAME".encode())
             # name=user.recv(1024).decode()
             names.append(username)
             broadcast(f"{username} has joined the chat".encode())
-            if loginStatus or registerStatus:
-                thread=threading.Thread(target=messaging,args=(user,))
-                thread.start()
-            else:
-                break
         except TimeoutError:
             continue
         except KeyboardInterrupt:
