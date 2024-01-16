@@ -96,9 +96,13 @@ def registerUser(userSocket,username,password):
     global registerStatus
     query = f"INSERT INTO users (username, password) VALUES ({username}, {password})"
     status=execdb(query)
-    userSocket.send("success".encode())
-    registerStatus=True
-        
+    if status:
+        userSocket.send("success".encode())
+        registerStatus=True
+    else:
+        userSocket.send("fail".encode())
+        registerStatus=False
+        userSocket.close()    
         
 def accepter():
     while True:
