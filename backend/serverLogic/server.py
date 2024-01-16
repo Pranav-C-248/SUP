@@ -9,7 +9,7 @@ names=[]
 users=[]
 loginStatus=False
 registerStatus=False
-dbFree=True
+isdbFree=True
 
 serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 serverSock.bind((ip, port))
@@ -39,53 +39,59 @@ def messaging(user):
             break
         
 def execdb(query):
-    global dbFree
-    while not dbFree:
-        time.sleep(0.2)
+    global isdbFree
+    print(f"Executing {query}")
+    time.sleep(2)
+    while not isdbFree:
+        print("Waiting...")
+        time.sleep(5)
         
     else:
-        dbFree=False
+        isdbFree=False
         try:
             conn=mysql.connector.connect(host='localhost',database='sup',user='root',password='Drake@248')
-            curs=conn.cursor()
+            curs=conn.cursor(buffered=True)
             try:
                 curs.execute(query)
                 conn.commit()
                 data=curs.fetchall()
                 curs.close()
                 conn.close()
-                dbFree=True
+                isdbFree=True
                 return data
             except Exception as e:
                 print("MySQL error ",e)
                 curs.close()
                 conn.close()
-                dbFree=True
+                isdbFree=True
                 
         except:
             print("Fixing db...")
             conn=mysql.connector.connect(host='localhost',user='root',password='Drake@248')
-            curs=conn.cursor()    
+            curs=conn.cursor(buffered=True)    
             curs.execute("create database if not exists sup")  
             print("Recreated db.")
             curs.execute("create table if not exists sup.users(id INT AUTO_INCREMENT PRIMARY KEY,username VARCHAR(255) UNIQUE NOT NULL,password VARCHAR(255) NOT NULL)")
             print("Recreated tables.")
             curs.close()
             conn.close()
-            dbFree=True
+            isdbFree=True
             return execdb(query)
         
         
 def loginUser(userSocket,username,password):
     global loginStatus
-    query = f"SELECT * FROM users WHERE username ={username} AND password = {password}"
+    query = f"SELECT * FROM users WHERE username ='{username}' AND password = '{password}'"
     status=execdb(query)
+    
     if status:
         userSocket.send("success".encode())
         loginStatus=True
     else:
         userSocket.send("fail".encode())
         loginStatus=False
+        userSocket.close()
+    print(loginStatus)
 def registerUser(userSocket,username,password):
     global registerStatus
     query = f"INSERT INTO users (username, password) VALUES ({username}, {password})"
@@ -97,22 +103,23 @@ def registerUser(userSocket,username,password):
 def accepter():
     while True:
         try:
+            
             user,add=serverSock.accept()
             action,username,password=user.recv(1024).decode().split(",")
             if action=="login":
                 loginUser(user,username,password)
             elif action=="register":
                 registerUser(user,username,password)
-            users.append(user)
-            # user.send("NAME".encode())
-            # name=user.recv(1024).decode()
-            names.append(username)
             broadcast(f"{username} has joined the chat".encode())
             if loginStatus or registerStatus:
+                users.append(user)
+                names.append(username)
                 thread=threading.Thread(target=messaging,args=(user,))
                 thread.start()
             else:
+                user.close()
                 break
+            
         except TimeoutError:
             continue
         except KeyboardInterrupt:
