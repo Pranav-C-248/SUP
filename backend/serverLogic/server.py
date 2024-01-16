@@ -95,6 +95,7 @@ def loginUser(userSocket,username,password):
         userSocket.close()
     print(loginStatus)
 def registerUser(userSocket,username,password):
+    global registerStatus
     query = f"INSERT INTO sup.users (username, password) VALUES ({username}, {password})"
     status=execdb(query)
     if status:
