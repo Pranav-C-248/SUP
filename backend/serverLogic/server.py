@@ -3,11 +3,12 @@ import threading
 import mysql.connector
 import time
 
-ip = "127.0.0.1"
+ip = "192.168.1.3"
 port = 8888
 names=[]
 users=[]
-
+nameToSocket={}
+currentUser=None
 loginStatus=False
 registerStatus=False
 isdbFree=True
@@ -88,27 +89,55 @@ def loginUser(userSocket,username,password):
     
     if status:
         userSocket.send("success".encode())
-        return True
+        loginStatus=True
     else:
         userSocket.send("fail".encode())
         loginStatus=False
         userSocket.close()
     print(loginStatus)
 def registerUser(userSocket,username,password):
+    global registerStatus
     query = f"INSERT INTO sup.users (username, password) VALUES ({username}, {password})"
     status=execdb(query)
-    userSocket.send("success".encode())
-    return True
+    if status:
+        userSocket.send("success".encode())
+        registerStatus=True
+    else:
+        userSocket.send("fail".encode())
+        registerStatus=False
+        userSocket.close()    
+
+
+def fetchFriendsList(userSocket,username):
+
+    query=f"select * from friends where user1={username} or user2={username}"
+    flist=execdb(query)
+    if flist:
+        #implement pickling/json logic here
+        pass
+    else:
+        userSocket.send("null".encode())
         
-        
+def addFriend(userName,targetName):
+    query=f"insert into friends (user1,user2,status) values ({userName},{targetName},pending)"
+    execdb(query)
+    #COMPLETE THIS
+def removeFriend(userSocket,targetName):
+    #COMPLETE THIS
+    pass
+def getSocket(username):
+    #COMPLETE THIS
+    pass
+
+       
 def accepter():
     while True:
         try:
-            
+            print("server is running")
             user,add=serverSock.accept()
             action,username,password=user.recv(1024).decode().split(",")
             if action=="login":
-                status = loginUser(user,username,password)
+                loginUser(user,username,password)
             elif action=="register":
 
                 registerUser(user,username,password)
@@ -119,8 +148,9 @@ def accepter():
                 thread=threading.Thread(target=messaging,args=(user,))
                 thread.start()
             else:
+                print("Wrong credentials")
                 user.close()
-                break
+                
             
         except TimeoutError:
             continue

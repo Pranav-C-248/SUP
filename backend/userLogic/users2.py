@@ -46,13 +46,18 @@ class user:
 eel.init("frontend")
 curUser=user()
 @eel.expose
+
+#function to handle login. Communicates between js and server.
+#Sends action,username and password to server
+#Receives "success" or "fail"
+
 def loginHandle(uName,uPass):
     global loginStatus,username,curUser
     curUser.name=uName
     action="login"
     curUser.userSoc.send(f"{action},{uName},{uPass}".encode())
-    loginstate=loginSocket.recv(1024).decode()
-    if loginstate is True:
+    loginstate=curUser.userSoc.recv(1024).decode()
+    if loginstate == "Success":
         loginStatus=True
         username=uName
         return loginStatus
@@ -61,8 +66,8 @@ def loginHandle(uName,uPass):
         return loginStatus
 
 if loginStatus is True:
-    user=user(username)
-    user.start()
+    curUser.start()
+
 
 try:
     eel.start('login.html', size=(700, 500), mode='chrome', port=0)
