@@ -110,7 +110,7 @@ def registerUser(userSocket,username,password):
 
 def fetchFriendsList(userSocket,username):
 
-    query=f"select * from friends where user1={username} or user2={username}"
+    query=f"select * from friends where user1='{username}'"
     flist=execdb(query)
     if flist:
         #implement pickling/json logic here
@@ -120,7 +120,9 @@ def fetchFriendsList(userSocket,username):
         
 def addFriend(userName,targetName):
     query=f"insert into friends (user1,user2,status) values ({userName},{targetName},pending)"
+    query1=f"insert into friends (user1,user2,status) values ({targetName},{userName},pending)"
     execdb(query)
+    execdb(query1)
     #COMPLETE THIS
 def removeFriend(userSocket,targetName):
     #COMPLETE THIS
