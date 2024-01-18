@@ -2,9 +2,16 @@ import socket
 import threading
 import mysql.connector
 import time
+import os
+from dotenv import dotenv_values
 
-ip = "192.168.1.3"
-port = 8888
+config = dotenv_values(".env")
+IP = config.get('IP')
+PORT = config.get('PORT')
+DBHOST = config.get('DBHOST')
+DBNAME = config.get('DBNAME')
+DBUSER = config.get('DBUSER')
+DBPASS = config.get('DBPASS')
 names=[]
 users=[]
 nameToSocket={}
@@ -14,12 +21,13 @@ registerStatus=False
 isdbFree=True
 
 serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-serverSock.bind((ip, port))
+serverSock.bind((IP, PORT))
 
 serverSock.listen()
 serverSock.settimeout(2)
 print("server is listening...")
 
+#relays same message to all users
 def broadcast(msg):
     for user in users:
         user.send(msg)
@@ -51,7 +59,7 @@ def execdb(query):
     else:
         isdbFree=False
         try:
-            conn=mysql.connector.connect(host='localhost',database='sup',user='root',password='Drake@248')
+            conn=mysql.connector.connect(host=DBHOST,database=DBNAME,user=DBUSER,password=DBPASS)
             curs=conn.cursor(buffered=True)
             try:
                 curs.execute(query)
@@ -69,11 +77,11 @@ def execdb(query):
                 
         except:
             print("Fixing db...")
-            conn=mysql.connector.connect(host='localhost',user='root',password='Drake@248')
+            conn=mysql.connector.connect(host=DBHOST,user=DBUSER,password=DBPASS)
             curs=conn.cursor(buffered=True)    
-            curs.execute("create database if not exists sup")  
+            curs.execute(f"create database if not exists {DBNAME}")  
             print("Recreated db.")
-            curs.execute("create table if not exists sup.users(id INT AUTO_INCREMENT PRIMARY KEY,username VARCHAR(255) UNIQUE NOT NULL,password VARCHAR(255) NOT NULL)")
+            curs.execute(f"create table if not exists {DBNAME}.users(id INT AUTO_INCREMENT PRIMARY KEY,username VARCHAR(255) UNIQUE NOT NULL,password VARCHAR(255) NOT NULL)")
             print("Recreated tables.")
             curs.close()
             conn.close()
@@ -97,7 +105,7 @@ def loginUser(userSocket,username,password):
     print(loginStatus)
 def registerUser(userSocket,username,password):
     global registerStatus
-    query = f"INSERT INTO sup.users (username, password) VALUES ({username}, {password})"
+    query = f"INSERT INTO {DBNAME}.users (username, password) VALUES ({username}, {password})"
     status=execdb(query)
     if status:
         userSocket.send("success".encode())
