@@ -2,24 +2,26 @@ import socket
 import threading
 import mysql.connector
 import time
-import os
-from dotenv import load_dotenv
+import json
+from dotenv import dotenv_values
 
-load_dotenv()
-
-IP = os.getenv('IP')
-PORT = os.getenv('PORT')
+config=dotenv_values(".env")
+IP = config.get('IP')
+PORT = config.get('PORT')
 PORT=int(PORT)
-DBHOST = os.getenv('DBHOST')
-DBNAME = os.getenv('DBNAME')
-DBUSER = os.getenv('DBUSER')
-DBPASS = os.getenv('DBPASS')
-names=[]
-users=[]
-nameToSocket={}
-currentUser=None
-loginStatus=False
-registerStatus=False
+DBHOST = config.get('DBHOST')
+DBNAME = config.get('DBNAME')
+DBUSER = config.get('DBUSER')
+DBPASS = config.get('DBPASS')
+
+
+class User:
+    def __init__(self,socket,name) -> None:
+        self.name=name
+        self.socket=socket
+        self.loginState=False
+        
+
 isdbFree=True
 
 serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -28,27 +30,6 @@ serverSock.bind((IP, PORT))
 serverSock.listen()
 serverSock.settimeout(2)
 print("server is listening...")
-
-#relays same message to all users
-def broadcast(msg):
-    for user in users:
-        user.send(msg)
-        
-def messaging(user):
-    while True:
-        try:
-            # Broadcasting Messages
-            message = user.recv(1024).decode()
-            broadcast(message.encode())
-        except:
-            # Removing And Closing Clients
-            index = users.index(user)
-            users.remove(user)
-            user.close()
-            nickname = names[index]
-            broadcast(f'{nickname} left!'.encode())
-            names.remove(nickname)
-            break
         
 def execdb(query):
     global isdbFree
@@ -91,42 +72,40 @@ def execdb(query):
             return execdb(query)
         
         
-def loginUser(userSocket,username,password):
-
-    global loginStatus
-    query = f"SELECT * FROM users WHERE username ='{username}' AND password = '{password}'"
+def loginUser(user,password):
+    query = f"SELECT * FROM users WHERE username ='{user.name}' AND password = '{password}'"
     status=execdb(query)
     
     if status:
-        userSocket.send("success".encode())
-        loginStatus=True
+        user.socket.send("success".encode())
+        user.loginState=True
     else:
-        userSocket.send("fail".encode())
-        loginStatus=False
-        userSocket.close()
-    print(loginStatus)
-def registerUser(userSocket,username,password):
-    global registerStatus
+        user.socket.send("fail".encode())
+        user.loginState=False
+        user.socket.close()
+    print(user.loginState)
+    
+def registerUser(user,password):
     query = f"INSERT INTO {DBNAME}.users (username, password) VALUES ({username}, {password})"
     status=execdb(query)
     if status:
-        userSocket.send("success".encode())
-        registerStatus=True
+        user.socket.send("success".encode())
     else:
-        userSocket.send("fail".encode())
-        registerStatus=False
-        userSocket.close()    
+        user.socket.send("fail".encode())
+        user.socket.close()    
 
 
-def fetchFriendsList(userSocket,username):
+def fetchFriendsList(user):
 
-    query=f"select * from friends where user1='{username}'"
+    query=f"select * from friends where user1='{user.name}'"
     flist=execdb(query)
     if flist:
-        #implement pickling/json logic here
-        pass
+        flist=json.dumps()
+        user.socket.send(flist)
+        print("Friends: ",flist)
     else:
-        userSocket.send("null".encode())
+        print("No friends :( ")
+        user.socket.send("null".encode())
         
 def addFriend(userName,targetName):
     query=f"insert into friends (user1,user2,status) values ({userName},{targetName},pending)"
@@ -137,32 +116,29 @@ def addFriend(userName,targetName):
 def removeFriend(userSocket,targetName):
     #COMPLETE THIS
     pass
-def getSocket(username):
-    #COMPLETE THIS
-    pass
 
+def message2frnd(targetUser,text:str):
+   pass
        
 def accepter():
     while True:
         try:
-            user,add=serverSock.accept()
-            action,username,password=user.recv(1024).decode().split(",")
-            if action=="login":
-                loginUser(user,username,password)
-            elif action=="register":
-
-                registerUser(user,username,password)
-            broadcast(f"{username} has joined the chat".encode())
-            if loginStatus or registerStatus:
-                users.append(user)
-                names.append(username)
-                thread=threading.Thread(target=messaging,args=(user,))
-                thread.start()
-            else:
-                print("Wrong credentials")
-                user.close()
-                
+            userSock, address= serverSock.accept()
+            data=userSock.recv(1024).decode()
+            data=json.loads(data)
+            user=User(userSock,data["name"])
             
+            if data["action"]=="login":
+                loginUser(user,data["password"])
+            elif data["action"]=="register":
+                pass
+            elif data["action"]=="text":
+                if user.loginState is True:
+                    message2frnd(data["target"],data["content"])
+            elif data["action"]=="fetch":
+                if user.loginState is True:
+                    fetchFriendsList(user.name)
+ 
         except TimeoutError:
             continue
         except KeyboardInterrupt:

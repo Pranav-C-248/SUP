@@ -2,11 +2,9 @@ import eel
 import socket
 import threading
 
-
 #global variables
 loginStatus=False
 username=None
-
 
 class user:
     def __init__(self,name=None) -> None:
@@ -40,8 +38,6 @@ class user:
         listenThread.start()
         writeThread=threading.Thread(target=self.write)
         writeThread.start()
-
-
 
 eel.init("frontend")
 curUser=user()
