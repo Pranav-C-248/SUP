@@ -1,10 +1,10 @@
 import eel 
 import socket
 import threading
-import json
+
 #global variables
 loginStatus=False
-
+username=None
 
 class user:
     def __init__(self,name=None) -> None:
@@ -41,31 +41,28 @@ class user:
 
 eel.init("gui")
 curUser=user()
-
-
 @eel.expose
+
+#function to handle login. Communicates between js and server.
+#Sends action,username and password to server
+#Receives "success" or "fail"
+
 def loginHandle(uName,uPass):
-    global loginStatus,curUser
+    global loginStatus,username,curUser
     curUser.name=uName
-    
-    package={
-        "action":"login",
-        "name":f"{uName}",
-        "password":f"{uPass}"
-    }
-    
-    package=json.dumps(package)
-    curUser.userSoc.send(package.encode())
-    
+    action="login"
+    curUser.userSoc.send(f"{action},{uName},{uPass}".encode())
     loginstate=curUser.userSoc.recv(1024).decode()
     if loginstate == "Success":
-        print("logged in")
         loginStatus=True
+        username=uName
         return loginStatus
     else:
-        print("Wrong creds")
         loginStatus=False
         return loginStatus
+
+
+print("reahced here")
 
 if loginStatus is True:
     curUser.start()
@@ -74,7 +71,8 @@ if loginStatus is True:
 try:
     eel.start('login.html', size=(700, 500), mode='chrome', port=0)
 except (SystemExit, MemoryError, KeyboardInterrupt):
-    print("Closing app...")
+    # Handle exceptions when the Eel application is closed
+    pass
 except Exception as e:
-
+    # Print other exceptions for troubleshooting
     print(f"Error: {e}")

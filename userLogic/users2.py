@@ -61,16 +61,16 @@ def loginHandle(uName,uPass):
     
     if loginstate == "success":
         loginStatus=True
-        print(loginstate)
-        print("Reachced breakpoint")
+        print(loginStatus)
+        print("Socket starting...")
+        curUser.start()
         return loginStatus
     else:
         print("Wrong creds")
         loginStatus=False
         return loginStatus
 
-if loginStatus is True:
-    curUser.start()
+
 try:
     eel.start('login.html', size=(700, 500), mode='chrome', port=0)
 except :
