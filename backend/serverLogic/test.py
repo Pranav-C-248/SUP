@@ -5,8 +5,8 @@ userSoc=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 userSoc.connect(("192.168.1.3",8888))
 
 data={
-    "action":"login",
-    "name":"Drake",
+    "action":"register",
+    "name":"ABC",
     "password":"123"
 }
 

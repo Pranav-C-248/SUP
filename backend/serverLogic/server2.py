@@ -45,6 +45,15 @@ def execdb(query):
             conn=mysql.connector.connect(host=DBHOST,database=DBNAME,user=DBUSER,password=DBPASS)
             curs=conn.cursor(buffered=True)
             try:
+                if query[:6]=="INSERT":
+                    curs.execute(query)
+                    if curs.rowcount>0:
+                        conn.commit()
+                        curs.close()
+                        conn.close()
+                        return "success"
+                    else:
+                        return "fail"
                 curs.execute(query)
                 conn.commit()
                 data=curs.fetchall()
@@ -75,7 +84,7 @@ def execdb(query):
 def loginUser(user,password):
     query = f"SELECT * FROM users WHERE username ='{user.name}' AND password = '{password}'"
     status=execdb(query)
-    
+    print("Status: ",status)
     if status:
         user.socket.send("success".encode())
         user.loginState=True
@@ -86,10 +95,11 @@ def loginUser(user,password):
     print(user.loginState)
     
 def registerUser(user,password):
-    query = f"INSERT INTO {DBNAME}.users (username, password) VALUES ({username}, {password})"
+    query = f"INSERT INTO users (username, password) VALUES ('{user.name}', '{password}')"
     status=execdb(query)
-    if status:
+    if status=="success":
         user.socket.send("success".encode())
+        print("Registered")
     else:
         user.socket.send("fail".encode())
         user.socket.close()    
@@ -125,13 +135,13 @@ def accepter():
         try:
             userSock, address= serverSock.accept()
             data=userSock.recv(1024).decode()
-            data=json.loads(data)
+            data=json.loads(data)   
             user=User(userSock,data["name"])
             
             if data["action"]=="login":
                 loginUser(user,data["password"])
             elif data["action"]=="register":
-                pass
+                registerUser(user,data["password"])
             elif data["action"]=="text":
                 if user.loginState is True:
                     message2frnd(data["target"],data["content"])
@@ -151,6 +161,6 @@ while True:
     try:
         time.sleep(5)
     except:
-        print("CLOSED")
+        print("Closing......")
         break
     

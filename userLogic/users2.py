@@ -1,10 +1,10 @@
 import eel 
 import socket
 import threading
-
+import json
 #global variables
 loginStatus=False
-username=None
+
 
 class user:
     def __init__(self,name=None) -> None:
@@ -34,42 +34,44 @@ class user:
                 self.userSoc.close()
 
     def start(self):
-        listenThread=threading.Thread(target=self.listen)
+        listenThread=threading.Thread(target=self.listen,daemon=True)
         listenThread.start()
-        writeThread=threading.Thread(target=self.write)
+        writeThread=threading.Thread(target=self.write,daemon=True)
         writeThread.start()
 
-eel.init("frontend")
+eel.init("gui")
 curUser=user()
+
+
 @eel.expose
-
-#function to handle login. Communicates between js and server.
-#Sends action,username and password to server
-#Receives "success" or "fail"
-
 def loginHandle(uName,uPass):
-    global loginStatus,username,curUser
+    global loginStatus,curUser
     curUser.name=uName
-    action="login"
-    curUser.userSoc.send(f"{action},{uName},{uPass}".encode())
+    
+    package={
+        "action":"login",
+        "name":f"{uName}",
+        "password":f"{uPass}"
+    }
+    
+    package=json.dumps(package)
+    curUser.userSoc.send(package.encode())
+
     loginstate=curUser.userSoc.recv(1024).decode()
-    if loginstate == "Success":
+    
+    if loginstate == "success":
         loginStatus=True
-        username=uName
+        print(loginstate)
+        print("Reachced breakpoint")
         return loginStatus
     else:
+        print("Wrong creds")
         loginStatus=False
         return loginStatus
 
 if loginStatus is True:
     curUser.start()
-
-
 try:
     eel.start('login.html', size=(700, 500), mode='chrome', port=0)
-except (SystemExit, MemoryError, KeyboardInterrupt):
-    # Handle exceptions when the Eel application is closed
-    pass
-except Exception as e:
-    # Print other exceptions for troubleshooting
-    print(f"Error: {e}")
+except :
+    print("Closing app...")

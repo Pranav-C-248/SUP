@@ -1,6 +1,6 @@
 import eel
 
-eel.init('frontend')  # Folder containing your HTML, CSS, and JavaScript files
+eel.init('gui')  # Folder containing your HTML, CSS, and JavaScript files
 
 @eel.expose
 def send_message(message):

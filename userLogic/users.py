@@ -1,9 +1,13 @@
+import eel 
 import socket
 import threading
+import json
+#global variables
+loginStatus=False
+
 
 class user:
-    
-    def __init__(self,name) -> None:
+    def __init__(self,name=None) -> None:
         self.name=name
         self.userSoc=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.userSoc.connect(("192.168.1.3",8888))
@@ -35,7 +39,42 @@ class user:
         writeThread=threading.Thread(target=self.write)
         writeThread.start()
 
+eel.init("gui")
+curUser=user()
 
-                    
-                
 
+@eel.expose
+def loginHandle(uName,uPass):
+    global loginStatus,curUser
+    curUser.name=uName
+    
+    package={
+        "action":"login",
+        "name":f"{uName}",
+        "password":f"{uPass}"
+    }
+    
+    package=json.dumps(package)
+    curUser.userSoc.send(package.encode())
+    
+    loginstate=curUser.userSoc.recv(1024).decode()
+    if loginstate == "Success":
+        print("logged in")
+        loginStatus=True
+        return loginStatus
+    else:
+        print("Wrong creds")
+        loginStatus=False
+        return loginStatus
+
+if loginStatus is True:
+    curUser.start()
+
+
+try:
+    eel.start('login.html', size=(700, 500), mode='chrome', port=0)
+except (SystemExit, MemoryError, KeyboardInterrupt):
+    print("Closing app...")
+except Exception as e:
+
+    print(f"Error: {e}")
