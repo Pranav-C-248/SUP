@@ -1,6 +1,5 @@
 import eel 
 import socket
-import threading
 import json
 #global variables
 loginStatus=False
@@ -34,10 +33,10 @@ class user:
                 self.userSoc.close()
 
     def start(self):
-        listenThread=threading.Thread(target=self.listen,daemon=True)
-        listenThread.start()
-        writeThread=threading.Thread(target=self.write,daemon=True)
-        writeThread.start()
+        print("Socket starting...")
+        eel.spawn(function=self.listen)
+        eel.spawn(function=self.write)
+
 
 eel.init("gui")
 curUser=user()
@@ -62,14 +61,14 @@ def loginHandle(uName,uPass):
     if loginstate == "success":
         loginStatus=True
         print(loginStatus)
-        print("Socket starting...")
-        curUser.start()
+        
+        # curUser.start()
         return loginStatus
     else:
         print("Wrong creds")
         loginStatus=False
         return loginStatus
-
+        
 
 try:
     eel.start('login.html', size=(700, 500), mode='chrome', port=0)

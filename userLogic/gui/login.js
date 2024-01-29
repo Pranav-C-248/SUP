@@ -5,9 +5,23 @@ async function login() {
     try {
         var status = await eel.loginHandle(username, password)();
         console.log("Status:",status)
-        console.log("asdasdasdadsasdadsasd")
+        if (status==true){
+            console.log("Success")
+            redirectToFriends()
+        }
+        else{
+            const name=document.getElementById("loginUsername")
+            name.textContent="Wrong Creds"
+            const password=document.getElementById("loginPassword")
+            password.textContent="Wrong Creds"
+        }
     } catch (error) {
         console.error(error);
     }
 
 };
+
+function redirectToFriends() {
+    window.location.replace('/frontpage.html');
+}
+

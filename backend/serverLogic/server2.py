@@ -161,6 +161,6 @@ while True:
     try:
         time.sleep(5)
     except:
-        print("Closing......")
+        print("Closing....")
         break
     

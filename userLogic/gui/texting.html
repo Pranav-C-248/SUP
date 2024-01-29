@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Messaging App</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background: linear-gradient(to right, #2C3E50, #34495E);
+            color: #fff;
+        }
+        
+        #message-container {
+            border-radius: 5px;
+            background: linear-gradient(to right, #2C3E50, #34495E);
+            padding: 10px;
+            margin: 10px;
+            flex: 1;
+            overflow-y: scroll;
+            max-height: calc(100vh - 70px); /* Adjust based on your design */
+            scrollbar-width: thin; /* For Firefox */
+            scrollbar-color: #3498db transparent; /* For Firefox */
+        }
+
+        #message-container::-webkit-scrollbar {
+            width: 10px; /* Width of the scrollbar */
+        }
+
+        #message-container::-webkit-scrollbar-thumb {
+            background-color: #3498db; /* Color of the thumb */
+            border-radius: 10px; /* Radius of the thumb */
+        }
+
+        #message-container::-webkit-scrollbar-track {
+            background-color: transparent; /* Color of the track */
+        }
+        
+        #message-input-container {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            box-shadow: 0px -5px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        #message-input {
+            flex: 1;
+            padding: 10px;
+            margin: 5px;
+            border: 2px solid #3498db;
+            border-radius: 20px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        #message-input:focus {
+            border-color: #2980b9;
+        }
+        
+        #submit-btn {
+            padding: 10px;
+            cursor: pointer;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-left: 5px;
+            transition: background-color 0.3s ease;
+        }
+        
+        #submit-btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
+    <script type="text/javascript" src="/eel.js"></script>
+</head>
+<body>
+
+<div id="message-container"></div>
+
+<div id="message-input-container">
+    <input type="text" id="message-input" placeholder="Type your message..." onkeydown="if (event.key === 'Enter') sendMessage()">
+    <button id="submit-btn" onclick="sendMessage()">Submit</button>
+</div>
+
+<script>
+    function sendMessage() {
+        console.log("asdasdasddasd")
+        var messageInput = document.getElementById("message-input");
+        var message = messageInput.value.trim();
+
+        if (message !== "") {
+            eel.send_message(message);
+            messageInput.value = "";
+        }
+
+    function showmsg(data) {
+        console.log("asdad")
+        var xac = document.getElementById("message-container")
+        var newKid = document.createElement("p")
+        newKid.textContent = data
+        xac.appendChild(newKid)
+
+    }
+    eel.expose(showmsg)
+    }
+</script>
+
+</body>
+</html>
